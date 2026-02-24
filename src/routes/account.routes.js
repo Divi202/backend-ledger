@@ -1,6 +1,6 @@
 const express = require("express");
 const authMiddleware = require("../middleware/auth.middleware");
-const { createAccountController } = require("../controllers/account.controller");
+const accountController = require("../controllers/account.controller");
 
 const router = express.Router();
 
@@ -13,7 +13,28 @@ const router = express.Router();
 router.post(
   "/",
   authMiddleware.authMiddleware,
-  createAccountController,
+  accountController.createAccountController,
 );
 
+/**
+ * - GET /api/accounts/
+ * - Get all accounts of the ledger-in user
+ * - Protected Route
+ *  */
+router.get(
+  "/",
+  authMiddleware.authMiddleware,
+  accountController.getUserAccountsController,
+);
+
+/**
+ * - GET /api/accounts/balance/:accountId
+ * - Get account balance
+ * - Protected Route
+ *  */
+router.get(
+  "/balance/:accountId",
+  authMiddleware.authMiddleware,
+  accountController.getAccountBalanceController,
+);
 module.exports = router;
