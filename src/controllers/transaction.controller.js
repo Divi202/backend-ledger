@@ -172,47 +172,58 @@ async function createInitialFundsTransaction(req, res) {
   }
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  try {
+    session.startTransaction();
 
-  const transaction = new transactionModel({
-    fromAccount: fromUserAccount._id,
-    toAccount,
-    amount,
-    idempotencyKey,
-    status: "PENDING",
-  });
-  const debitLedgerEntry = await ledgerModel.create(
-    [
-      {
-        account: fromUserAccount._id,
-        amount: amount,
-        transaction: transaction._id,
-        type: "DEBIT",
-      },
-    ],
-    { session },
-  );
-  const creditLedgerEntry = await ledgerModel.create(
-    [
-      {
-        account: toAccount,
-        amount: amount,
-        transaction: transaction._id,
-        type: "CREDIT",
-      },
-    ],
-    { session },
-  );
+    const transaction = new transactionModel({
+      fromAccount: fromUserAccount._id,
+      toAccount,
+      amount,
+      idempotencyKey,
+      status: "PENDING",
+    });
+    const debitLedgerEntry = await ledgerModel.create(
+      [
+        {
+          account: fromUserAccount._id,
+          amount: amount,
+          transaction: transaction._id,
+          type: "DEBIT",
+        },
+      ],
+      { session },
+    );
+    const creditLedgerEntry = await ledgerModel.create(
+      [
+        {
+          account: toAccount,
+          amount: amount,
+          transaction: transaction._id,
+          type: "CREDIT",
+        },
+      ],
+      { session },
+    );
 
-  transaction.status = "COMPLETED";
-  await transaction.save({ session });
+    transaction.status = "COMPLETED";
+    await transaction.save({ session });
 
-  session.endSession();
+    await session.commitTransaction();
+    session.endSession();
 
-  return res.status(201).json({
-    message: "Initial funds transaction completed successfully",
-    transaction: transaction,
-  });
+    return res.status(201).json({
+      message: "Initial funds transaction completed successfully",
+      transaction: transaction,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Transaction failed:", error);
+    return res.status(500).json({
+      message: "Transaction failed",
+      error: error.message,
+    });
+  }
 }
 
 module.exports = {
