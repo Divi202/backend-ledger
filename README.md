@@ -146,7 +146,7 @@ This project is licensed under the MIT License.
 
 ## 👤 Author
 
-**Divya Singh**
+**Divya**
 GitHub: [https://github.com/Divi202](https://github.com/Divi202)
 
 ---
